@@ -36,6 +36,17 @@ export type SnapshotDTO = {
   events: EventDTO[];
 };
 
+export type AgentsStatusResponse = {
+  updatedAt: string;
+  agents: {
+    name: string;
+    role: string;
+    busy: boolean;
+    health: "healthy" | "problem";
+    currentTask?: string;
+  }[];
+};
+
 const API_URL = process.env.NEXT_PUBLIC_CONTROLLER_URL || "http://localhost:4000";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -58,6 +69,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export async function fetchSnapshot(): Promise<SnapshotDTO> {
   return request<SnapshotDTO>("/snapshot", { cache: "no-store" });
+}
+
+export async function fetchAgentsStatus(): Promise<AgentsStatusResponse> {
+  return request<AgentsStatusResponse>("/agents/status", { cache: "no-store" });
 }
 
 export async function sendHeartbeat(agentId: AgentId, status: AgentDTO["status"]) {

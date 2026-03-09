@@ -4,10 +4,12 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import {
   createTask,
   fetchSnapshot,
+  fetchAgentsStatus,
   postEvent,
   sendHeartbeat,
   type AgentDTO,
   type AgentId,
+  type AgentsStatusResponse,
   type SnapshotDTO,
   type TaskDTO,
 } from "@/lib/api";
@@ -38,6 +40,10 @@ export function MissionControl() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+
+  const [agentStatus, setAgentStatus] = useState<AgentsStatusResponse | null>(null);
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const [taskTitle, setTaskTitle] = useState("");
   const [taskAgent, setTaskAgent] = useState<AgentId>("launch");
@@ -90,6 +96,23 @@ export function MissionControl() {
     const interval = setInterval(refreshSnapshot, 1000 * 15);
     return () => clearInterval(interval);
   }, [refreshSnapshot]);
+
+  useEffect(() => {
+    const loadStatus = async () => {
+      try {
+        setStatusError(null);
+        const data = await fetchAgentsStatus();
+        setAgentStatus(data);
+      } catch (err) {
+        setStatusError((err as Error).message);
+      } finally {
+        setStatusLoading(false);
+      }
+    };
+    loadStatus();
+    const interval = setInterval(loadStatus, 1000 * 15);
+    return () => clearInterval(interval);
+  }, []);
 
   const groupedTasks = useMemo(() => {
     return TASK_COLUMNS.map((column) => ({
@@ -210,6 +233,74 @@ export function MissionControl() {
               <p className="text-sm text-slate-400">{panel.detail}</p>
             </article>
           ))}
+        </section>
+
+        <section className="rounded-3xl border border-slate-800 bg-[#050917] p-5">
+          <header className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-white">Agent Status</h3>
+            <span className="text-xs uppercase tracking-[0.3em] text-slate-500">
+              {statusLoading
+                ? "Loading"
+                : statusError
+                ? "Unavailable"
+                : agentStatus?.updatedAt
+                ? `Updated ${new Date(agentStatus.updatedAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}`
+                : ""}
+            </span>
+          </header>
+          {statusError && (
+            <p className="text-sm text-rose-300">{statusError}</p>
+          )}
+          {!statusError && (
+            <div className="grid gap-3 md:grid-cols-2">
+              {agentStatus?.agents.map((agent) => (
+                <div
+                  key={agent.name}
+                  className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-white">{agent.name}</p>
+                      <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
+                        {agent.role}
+                      </p>
+                    </div>
+                    <div className="text-right text-xs uppercase">
+                      <span
+                        className={`mr-2 rounded-full px-2 py-0.5 ${
+                          agent.busy
+                            ? "bg-amber-400/20 text-amber-200"
+                            : "bg-emerald-400/20 text-emerald-200"
+                        }`}
+                      >
+                        {agent.busy ? "Busy" : "Idle"}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 ${
+                          agent.health === "healthy"
+                            ? "bg-emerald-500/20 text-emerald-200"
+                            : "bg-rose-500/20 text-rose-200"
+                        }`}
+                      >
+                        {agent.health === "healthy" ? "Healthy" : "Problem"}
+                      </span>
+                    </div>
+                  </div>
+                  {agent.currentTask && (
+                    <p className="mt-2 text-sm text-slate-200">
+                      {agent.currentTask}
+                    </p>
+                  )}
+                </div>
+              ))}
+              {statusLoading && (
+                <p className="text-sm text-slate-400">Loading agent status…</p>
+              )}
+            </div>
+          )}
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[2fr,1fr]">
