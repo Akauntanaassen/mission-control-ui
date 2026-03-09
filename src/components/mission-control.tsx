@@ -1,15 +1,44 @@
 "use client";
 
-import { useState } from "react";
-import { agents, eventLog, wallDisplays } from "@/lib/mockData";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { fetchSnapshot, type SnapshotDTO } from "@/lib/api";
+import { agents as fallbackAgents, eventLog as fallbackEvents, wallDisplays } from "@/lib/mockData";
 
 type ViewMode = "office" | "tasks";
 
 export function MissionControl() {
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("office");
+  const [snapshot, setSnapshot] = useState<SnapshotDTO | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const selectedAgent = agents.find((agent) => agent.id === activeAgent);
+  const dataAgents = snapshot?.agents ?? fallbackAgents;
+  const dataEvents = snapshot?.events ?? fallbackEvents;
+
+  const selectedAgent = useMemo(
+    () => dataAgents.find((agent) => agent.id === activeAgent),
+    [activeAgent, dataAgents]
+  );
+
+  const refreshSnapshot = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await fetchSnapshot();
+      setSnapshot(data);
+    } catch (err) {
+      console.error(err);
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshSnapshot();
+    const interval = setInterval(refreshSnapshot, 1000 * 15);
+    return () => clearInterval(interval);
+  }, [refreshSnapshot]);
 
   return (
     <div className="relative min-h-screen bg-[#060812] text-slate-100">
@@ -54,9 +83,23 @@ export function MissionControl() {
         </section>
 
         <section className="rounded-[32px] border border-slate-800 bg-[#0b0f1d] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.45)]">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">Office View</h2>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold text-white">Office View</h2>
+              <div className="text-xs text-slate-400">
+                {loading ? "Syncing…" : "Live feed"}
+                {error && (
+                  <span className="ml-2 text-rose-300">Offline: {error}</span>
+                )}
+              </div>
+            </div>
             <div className="flex items-center gap-3 text-xs uppercase text-slate-400">
+              <button
+                onClick={refreshSnapshot}
+                className="rounded-full border border-slate-700 px-3 py-1 text-[11px] uppercase tracking-widest hover:border-cyan-400 hover:text-white"
+              >
+                Refresh
+              </button>
               <button
                 onClick={() => setViewMode("office")}
                 className={`rounded-full border px-3 py-1 ${
@@ -82,7 +125,7 @@ export function MissionControl() {
 
           {viewMode === "office" ? (
             <div className="grid gap-4 md:grid-cols-3">
-              {agents.map((agent) => (
+              {dataAgents.map((agent) => (
                 <button
                   key={agent.id}
                   onClick={() => setActiveAgent(agent.id)}
@@ -126,7 +169,7 @@ export function MissionControl() {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-3">
-              {agents.map((agent) => (
+              {dataAgents.map((agent) => (
                 <div
                   key={agent.id}
                   className="rounded-3xl border border-slate-800 bg-slate-900/50 p-4"
@@ -160,7 +203,7 @@ export function MissionControl() {
               </span>
             </header>
             <div className="space-y-3 text-sm">
-              {eventLog.map((item) => (
+              {dataEvents.map((item) => (
                 <div
                   key={item.id}
                   className={`flex items-center justify-between rounded-2xl border border-slate-800/60 bg-slate-900/30 px-3 py-2 ${
