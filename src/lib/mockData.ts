@@ -7,6 +7,7 @@ export type AgentState = {
   due: string;
   mood: string;
   color: string;
+  lastHeartbeat: string;
 };
 
 export type WallDisplay = {
@@ -34,6 +35,7 @@ export const agents: AgentState[] = [
     due: "Due 22:00",
     mood: "Locked in",
     color: "from-orange-400 to-pink-500",
+    lastHeartbeat: "19:44",
   },
   {
     id: "offer",
@@ -44,6 +46,7 @@ export const agents: AgentState[] = [
     due: "Review 09:00",
     mood: "Awaiting feedback",
     color: "from-sky-400 to-indigo-500",
+    lastHeartbeat: "19:41",
   },
   {
     id: "presale",
@@ -54,6 +57,7 @@ export const agents: AgentState[] = [
     due: "Next touch 10:00",
     mood: "Queued",
     color: "from-emerald-400 to-lime-500",
+    lastHeartbeat: "19:32",
   },
 ];
 
@@ -99,5 +103,32 @@ export const eventLog: EventLog[] = [
     text: "Presale Navigator booked GeoInfra intro.",
     agentId: "presale",
     tone: "success",
+  },
+];
+
+export const mockTasks = [
+  {
+    id: "task-1",
+    title: "Cut 30s DARPA teaser",
+    agentId: "launch",
+    state: "running",
+    priority: "high",
+    dueAt: "2026-03-09T22:00:00Z",
+  },
+  {
+    id: "task-2",
+    title: "Legal Ops FAQ pass",
+    agentId: "offer",
+    state: "queued",
+    priority: "medium",
+    dueAt: "2026-03-10T15:00:00Z",
+  },
+  {
+    id: "task-3",
+    title: "GeoInfra intro follow-up",
+    agentId: "presale",
+    state: "queued",
+    priority: "low",
+    dueAt: "2026-03-09T17:00:00Z",
   },
 ];

@@ -38,10 +38,63 @@ export type SnapshotDTO = {
 
 const API_URL = process.env.NEXT_PUBLIC_CONTROLLER_URL || "http://localhost:4000";
 
-export async function fetchSnapshot(): Promise<SnapshotDTO> {
-  const res = await fetch(`${API_URL}/snapshot`, { cache: "no-store" });
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...init?.headers,
+    },
+    ...init,
+  });
   if (!res.ok) {
-    throw new Error(`Failed to load snapshot (${res.status})`);
+    const message = await res.text();
+    throw new Error(message || `Request failed (${res.status})`);
   }
-  return res.json();
+  if (res.status === 204) {
+    return undefined as T;
+  }
+  return res.json() as Promise<T>;
+}
+
+export async function fetchSnapshot(): Promise<SnapshotDTO> {
+  return request<SnapshotDTO>("/snapshot", { cache: "no-store" });
+}
+
+export async function sendHeartbeat(agentId: AgentId, status: AgentDTO["status"]) {
+  return request(`/agents/${agentId}/heartbeat`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export type CreateTaskPayload = {
+  title: string;
+  agentId: AgentId;
+  priority?: TaskDTO["priority"];
+  dueAt?: string;
+  notes?: string;
+};
+
+export async function createTask(payload: CreateTaskPayload) {
+  return request("/tasks", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateTask(
+  taskId: string,
+  payload: Partial<Pick<TaskDTO, "state" | "priority" | "notes" | "dueAt">>
+) {
+  return request(`/tasks/${taskId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function postEvent(payload: { text: string; tone?: EventDTO["tone"]; agentId?: AgentId }) {
+  return request("/events", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
