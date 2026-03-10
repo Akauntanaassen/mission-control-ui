@@ -27,6 +27,8 @@ const TASK_COLUMNS: { key: TaskDTO["state"]; label: string }[] = [
   { key: "done", label: "Done" },
 ];
 
+const AGENT_DISPLAY_ORDER = ["Kelly", "Hedy", "Morse", "Willy"];
+
 const STATUS_LABEL: Record<AgentDTO["status"], string> = {
   focus: "On task",
   idle: "Standing by",
@@ -256,46 +258,49 @@ export function MissionControl() {
           )}
           {!statusError && (
             <div className="grid gap-3 md:grid-cols-2">
-              {agentStatus?.agents.map((agent) => (
-                <div
-                  key={agent.name}
-                  className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-white">{agent.name}</p>
-                      <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                        {agent.role}
-                      </p>
+              {AGENT_DISPLAY_ORDER.map((name) => {
+                const agent = agentStatus?.agents.find((item) => item.name === name);
+                const role = agent?.role ?? "";
+                const busy = agent?.busy ?? false;
+                const health = agent?.health ?? "problem";
+                const task = agent?.currentTask ?? "No data";
+                return (
+                  <div
+                    key={name}
+                    className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-white">{name}</p>
+                        <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
+                          {role || "Systems"}
+                        </p>
+                      </div>
+                      <div className="text-right text-xs uppercase">
+                        <span
+                          className={`mr-2 rounded-full px-2 py-0.5 ${
+                            busy
+                              ? "bg-amber-400/20 text-amber-200"
+                              : "bg-emerald-400/20 text-emerald-200"
+                          }`}
+                        >
+                          {busy ? "Busy" : "Idle"}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 ${
+                            health === "healthy"
+                              ? "bg-emerald-500/20 text-emerald-200"
+                              : "bg-rose-500/20 text-rose-200"
+                          }`}
+                        >
+                          {health === "healthy" ? "Healthy" : "Problem"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right text-xs uppercase">
-                      <span
-                        className={`mr-2 rounded-full px-2 py-0.5 ${
-                          agent.busy
-                            ? "bg-amber-400/20 text-amber-200"
-                            : "bg-emerald-400/20 text-emerald-200"
-                        }`}
-                      >
-                        {agent.busy ? "Busy" : "Idle"}
-                      </span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 ${
-                          agent.health === "healthy"
-                            ? "bg-emerald-500/20 text-emerald-200"
-                            : "bg-rose-500/20 text-rose-200"
-                        }`}
-                      >
-                        {agent.health === "healthy" ? "Healthy" : "Problem"}
-                      </span>
-                    </div>
+                    <p className="mt-2 text-sm text-slate-200">{task}</p>
                   </div>
-                  {agent.currentTask && (
-                    <p className="mt-2 text-sm text-slate-200">
-                      {agent.currentTask}
-                    </p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
               {statusLoading && (
                 <p className="text-sm text-slate-400">Loading agent status…</p>
               )}
