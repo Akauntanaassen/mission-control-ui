@@ -1,4 +1,4 @@
-export type AgentId = "launch" | "offer" | "presale";
+export type AgentId = "launch" | "offer" | "presale" | "systems";
 
 export type AgentDTO = {
   id: AgentId;

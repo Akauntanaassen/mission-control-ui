@@ -1,5 +1,5 @@
 export type AgentState = {
-  id: "launch" | "offer" | "presale";
+  id: "launch" | "offer" | "presale" | "systems" | "systems";
   name: string;
   role: string;
   status: "focus" | "idle" | "blocked" | "handoff";
@@ -58,6 +58,17 @@ export const agents: AgentState[] = [
     mood: "Queued",
     color: "from-emerald-400 to-lime-500",
     lastHeartbeat: "19:32",
+  },
+  {
+    id: "systems",
+    name: "Systems Engineer",
+    role: "Test & Telemetry",
+    status: "focus",
+    currentTask: "Document PPA-CF usage + telemetry plan",
+    due: "Field packet draft",
+    mood: "Methodical",
+    color: "from-teal-400 to-cyan-500",
+    lastHeartbeat: "19:35",
   },
 ];
 
